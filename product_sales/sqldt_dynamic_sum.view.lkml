@@ -25,11 +25,11 @@ view: sqldt_dynamic_sum {
         helper
       -- the following lines speed up the query but they also result in limited outcome
       ORDER BY sales_value DESC
-      LIMIT {% parameter top_x %}
+      LIMIT {% parameter top_n %}
        ;;
   }
 
-  parameter: top_x {
+  parameter: top_n {
     default_value: "2"
     type: number
   }
