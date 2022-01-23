@@ -101,7 +101,7 @@ At first, as described in [Sort by Pivots Rank with Other Bucket and Percentile 
 
 To be fully flexible with the dimensions pivoted, a `yesno` parameter is introduced for every dimension indicating its pivot status. In an ideal world liquid would allow to query for this information using something like `.is_pivoted` similar to `.is_filtered`.
 
-```
+```lookml
 view: sqldt_dynamic_sum {
   derived_table: {
     sql:
