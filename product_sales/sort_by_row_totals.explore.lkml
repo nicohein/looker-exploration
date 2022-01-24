@@ -4,7 +4,7 @@ include: "sqldt_dynamic_sum.view.lkml"
 explore: sort_by_row_totals {
   from: product_sales
   group_label: "Exploration"
-  label: "Product Sales with dynamic Sum"
+  label: "Product Sales with Dynamic Sum"
   view_label: "Product Sales"
 
   # due to the dynamic nature of the where clause in the join its obvious that it should take place only afer the aggregate aware
