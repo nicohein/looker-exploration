@@ -41,7 +41,6 @@ Given sets `a` and `b` the most needed and basic operations I can think of would
 - `a|minus(b)` or `a|difference(b)`
 - `a|intersection(b)`
 - `a|contains(view_name.field_name)`
-- `a|offset(n)`
 
 
 ### Loops 
@@ -58,7 +57,7 @@ WHERE 1=1
 {% endfor %}
 ```
  
-As the pseudocode in line 4 indicates, another set of field reference operations would become necessary
+As the pseudocode in line 4 indicates, another set of field reference operations would become necessary.
 
 
 ### Field Reference Operations
@@ -72,8 +71,3 @@ or if its not an attribute but an operator
 
     field_reference|field_name
     field_reference|or_name
-
-
- 
-
-
