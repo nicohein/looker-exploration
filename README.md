@@ -11,5 +11,5 @@ In this repository I am collecting a few patterns that I started to use while de
 ## Feature Requests
 
 - [Liquid](hypothetical_code/liquid.md)
-- [Aggregate awareness and the Join](product_sales/aggregate_awaremess_and_the_join.md)
+- [Aggregate awareness and the Join](product_sales/aggregate_awareness_and_the_join.md)
 

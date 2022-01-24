@@ -21,6 +21,8 @@ While LookML already supports sets it wold be amazing if liquid syntax would all
 
 ### Set Definition
 
+If the set was not already defined in LookML:
+
     {% set field_list = [view_name.field_name_1, view_name.field_name_2] %}
 
 The following predefined sets would be useful:
@@ -41,6 +43,7 @@ Given sets `a` and `b` the most needed and basic operations I can think of would
 - `a|minus(b)` or `a|difference(b)`
 - `a|intersection(b)`
 - `a|contains(view_name.field_name)`
+- `a|size`
 
 
 ### Loops 
@@ -60,14 +63,40 @@ WHERE 1=1
 As the pseudocode in line 4 indicates, another set of field reference operations would become necessary.
 
 
+## Custom Aggregate Awareness
+
+The above function would also allow simple custom aggregate awareness (demonstrated only for one path) like the follwoing:
+
+```lookml
+view: view_a {
+
+  # sql_table_name {
+
+  sql_table_name:
+    {% set rollup_1_fields = [view_a.a, view_a.b, view_a.c, view_a.d] %}
+    {% set rollup_2_fields = [view_a.a, view_a.b, view_a.c, view_a.d, view_a.e, view_a.f] %}
+    {% if rollup_1_fields|minus(fields)|size == 0 %}
+      `rollup_1`
+    {% elsif rollup_2_fields|minus(fields)|size == 0 %}
+      `rollup_2`
+    {% else %}
+      `base_table`
+    {% endif %} ;;
+    
+  # sql_table_name }
+...
+}    
+```
+
+
 ### Field Reference Operations
 
-Given that sets of field references contain full references to the fields, receiving the field name and view_name from a field reference would be handy:
+Given that sets of field references contain full references to the fields, receiving the field name and view name from a field reference would be handy:
 
     field_reference._field_name
-    field_reference._or_name
+    field_reference._view_name
 
 or if its not an attribute but an operator
 
     field_reference|field_name
-    field_reference|or_name
+    field_reference|view_name
