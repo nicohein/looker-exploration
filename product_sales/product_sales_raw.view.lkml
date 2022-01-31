@@ -84,6 +84,34 @@ view: product_sales {
     ;;
   }
 
+  dimension: dynamic_sales {
+    description: "A dimension containing the total sales value dynamically
+    in pivot visualizations to allow sorting by a row total when the row limit of over 5000 rows is reached."
+    type: number
+    sql: (
+    SELECT
+    SUM(dynamic_sales.sales_value)
+    FROM
+    product_sales AS dynamic_sales
+    WHERE
+    1 = 1  -- an always true expresssion so all the below clauses can be generated with an AND prefixed... it simplifies if then else logic
+
+    -- adding filters for all dimensions we want to add as columns but not pivot by
+    -- ideally we would add this filter if the dimension is a column and remove it if it is in pivot.. unfortunately there is no liquid to determine this
+    {% if category._is_selected %} AND ${category} = category {% endif %}
+    {% if product._is_selected %} AND ${product} = product {% endif %}
+    {% if sales_date._is_selected %} AND ${sales_date} = sales_date {% endif %}
+
+    -- adding filters for all dimensions we want to filter by
+    {% if territory._is_filtered %} AND {% condition product_sales.territory %} territory {% endcondition %} {% endif %}
+    {% if sales_date._is_filtered %} AND {% condition product_sales.sales_date %} sales_date {% endcondition %} {% endif %}
+    {% if category._is_filtered %} AND {% condition product_sales.category %} category {% endcondition %} {% endif %}
+    {% if product._is_filtered %} AND {% condition product_sales.product %} product {% endcondition %} {% endif %}
+    {% if sales_date._is_filtered %} AND {% condition product_sales.sales_date %} sales_date {% endcondition %}  {% endif %}
+
+          ) ;;
+  }
+
   set: detail {
     fields: [product, category, sales_date, territory, sales_value]
   }

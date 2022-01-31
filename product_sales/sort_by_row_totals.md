@@ -8,7 +8,7 @@ Essentially the solution proposed here is equal to the solution proposed in [Sor
 
 ## The Solution
 
-In this example I am using a simplified sales order model: 
+In this example I am using a simplified sales order model:
 
 `PRODUCT_SALES(product, category, territory, day, sales_value)`.
 
@@ -208,7 +208,7 @@ explore: sort_by_row_totals {
   # due to the dynamic nature of the where clause in the join its obvious that it should take place only afer the aggregate aware
   join: sqldt_dynamic_sum {
     view_label: "Dynamic Sum"
-    type: left_outer # if you do not need the option to group all not top x into a group called other, then use an inner join as it further increases the performance 
+    type: left_outer # if you do not need the option to group all not top x into a group called other, then use an inner join as it further increases the performance
     relationship: many_to_one
     sql_on: 1=1
       {% if sort_by_row_totals.product._is_selected and sqldt_dynamic_sum.is_product_pivot._parameter_value == "false" %} AND ${sort_by_row_totals.product} = ${sqldt_dynamic_sum.product} {% endif %}
@@ -224,7 +224,9 @@ explore: sort_by_row_totals {
 
 Further generalizing this solution to multiple measures using an additional parameter to select the sort measure is relatively straight forward.
 
-## Alternative Solution
+## Alternative Solutions
+
+### Window Function
 
 Very much the same outcome can be produced using a window function. While it's a lot less code, there will be a significant dip in performance for larger tables when the amount of partitions increases and `n` is small.
 
@@ -237,10 +239,10 @@ It then must be hidden from the visualization which is another disadvantage of t
     in pivot visualizations to allow sorting by a row total when the row limit of over 5000 rows is reached."
     type: number
     sql: SUM(SUM(${TABLE}.sales_value)) OVER (PARTITION BY
-      {% if product._is_selected %} ${product}, {% endif %} 
+      {% if product._is_selected %} ${product}, {% endif %}
       {% if category._is_selected %} ${category}, {% endif %}
       {% if sales_date._is_selected %} ${sales_date}, {% endif %}
-      -- {% if territory._is_selected %} ${territory}, {% endif %}  # manually excluding the dimension that will be pivoted by 
+      -- {% if territory._is_selected %} ${territory}, {% endif %}  # manually excluding the dimension that will be pivoted by
       1 -- helper
     )
     ;;
@@ -248,3 +250,43 @@ It then must be hidden from the visualization which is another disadvantage of t
 ```
 
 ![img](resources/product_sales_dynamic_sum_window.png)
+
+### Dinamic Dymension
+
+A third solution with the same results is a dynamic dimension to sum up the total sales. This solution allows to sort by row totals in a view that has reached the limit of 5000 rows. However, it must be hidden from the visualization.
+The dynamic dimension contains a subquery where we use SQL and liquid (similar to the previous solution) and must reference the same table from the view. You may notice that right after the WHERE clause I added a `1=1` condition (to simplify the IF THEN ELSE logic).
+
+In SQL we write a WHERE clause and then we start adding conditions connected with logical operators. If we don't have the 1=1, we cannot write valid SQL because we need to have one condition after WHERE before we start with the AND. In this dynamic dimension, every condition that follows in the WHERE can be added or not (depending on the dimensions the users selects). We would need to dynamically check  if we need to include an AND or not. As `1=1` is an true condition always, we can keep adding conditions without impacting the query.
+
+Next step is adding filters for all dimensions we want to add as columns but not pivot by (this is crucial). In this case we want to pivot by territory, so we do not add territory in these filters. Finally we add dimensions we need to filter by solely. We have to add the conditions in the liquid (after AND) even it that sounds a little bit redundant.
+
+Compared to the other two solutions presented, this is the one that showed the lowest performance for large tables because the sum of sales must be calculated for each individual row according to the other parameters selected.
+
+```lookml
+dimension: dynamic_sales {
+description: "A dimension containing the total sales value dynamically
+in pivot visualizations to allow sorting by a row total when the row limit of over 5000 rows is reached."
+type: number
+sql: (
+    SELECT
+    SUM(dynamic_sales.sales_value)
+    FROM
+    product_sales AS dynamic_sales
+    WHERE
+    1 = 1
+
+    -- adding filters for all dimensions we want to add as columns but not pivot by
+    {% if category._is_selected %} AND ${category} = category {% endif %}
+    {% if product._is_selected %} AND ${product} = product {% endif %}
+    {% if sales_date._is_selected %} AND ${sales_date} = sales_date {% endif %}
+
+    -- adding filters for all dimensions we want to filter by
+    {% if territory._is_filtered %} AND {% condition product_sales.territory %} territory {% endcondition %} {% endif %}
+    {% if sales_date._is_filtered %} AND {% condition product_sales.sales_date %} sales_date {% endcondition %} {% endif %}
+    {% if category._is_filtered %} AND {% condition product_sales.category %} category {% endcondition %} {% endif %}
+    {% if product._is_filtered %} AND {% condition product_sales.product %} product {% endcondition %} {% endif %}
+    {% if sales_date._is_filtered %} AND {% condition product_sales.sales_date %} sales_date {% endcondition %}  {% endif %}
+
+          ) ;;
+}
+```
